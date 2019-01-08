@@ -1,7 +1,7 @@
 import unittest
 import datetime
 import time
-from deadman import deadman_state_machine
+from deadman_state_machine import deadman_state_machine
 
 class ActiveStateTestCase(unittest.TestCase):
 
