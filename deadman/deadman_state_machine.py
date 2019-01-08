@@ -4,6 +4,7 @@ The object will appear to change its class.
 """
 
 import abc
+import logging
 import datetime
 import time
 import random
@@ -16,7 +17,8 @@ class DeadmanContext:
     current state.
     """
 
-    def __init__(self, state, timeout=120):
+    def __init__(self, state, timeout=120, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
         self._state = state
         self.timeout = timeout
         self.last_state = None
@@ -61,17 +63,16 @@ class DeadmanContext:
         self.resolve_sent = resolve_sent
 
     def request(self):
+        self.logger.debug("State is {}".format(self.get_state()))
         self._state.handle(self)
 
     def send_alert(self):
+        self.logger.debug("Send alert")
         self.set_alert_sent(True)
-        print("Send alert")
-        pass
 
     def send_resolve(self):
+        self.logger.debug("Send resolve")
         self.set_resolve_sent(True)
-        print("Send resolve")
-        pass
 
 
 class State(metaclass=abc.ABCMeta):
@@ -98,7 +99,6 @@ class AliveState(State):
     """
 
     def handle(self, context):
-        print("Alive State :: Update last state")
         context.set_last_state(context.get_state())
         # reset notifications
         context.set_alert_sent(False)
@@ -123,7 +123,6 @@ class DeadState(State):
     """
 
     def handle(self, context):
-        print("Dead State :: Update last state")
         context.set_last_state(context.get_state())
         if context.get_alert_sent() is False:
             context.send_alert()
@@ -148,7 +147,6 @@ class RessurrectionState(State):
     """
 
     def handle(self, context):
-        print("Ressurrection State :: Update last state")
         context.set_last_state(context.get_state())
         if context.get_resolve_sent() is False:
             context.send_resolve()
@@ -160,6 +158,8 @@ class RessurrectionState(State):
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
     alive_state = AliveState()
     context = DeadmanContext(alive_state, 10)
 
@@ -169,7 +169,9 @@ def main():
         # randomize last ping
         random_number = random.randint(1,10)
         if random_number < 3:
-            print("Ping")
+
+            logger.debug("Ping")
+
             context.set_last_ping(datetime.datetime.now())
 
         time.sleep(1)
