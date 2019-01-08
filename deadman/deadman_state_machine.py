@@ -10,7 +10,7 @@ import time
 import random
 
 
-class DeadmanContext:
+class DeadmanStateMachine:
     """
     Define the interface of interest to clients.
     Maintain an instance of a ConcreteState subclass that defines the
@@ -78,7 +78,7 @@ class DeadmanContext:
 class State(metaclass=abc.ABCMeta):
     """
     Define an interface for encapsulating the behavior associated with a
-    particular state of the DeadmanContext.
+    particular state of the DeadmanStateMachine.
     """
 
     @abc.abstractmethod
@@ -161,7 +161,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
     alive_state = AliveState()
-    context = DeadmanContext(alive_state, 10)
+    context = DeadmanStateMachine(alive_state, 10)
 
     while (datetime.datetime.now() - context.get_last_ping()) < datetime.timedelta(seconds=30):
         context.request()
