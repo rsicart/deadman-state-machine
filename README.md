@@ -32,3 +32,19 @@ State machine:
    ----| Ressurrection |
        -----------------
 ```
+
+Launch unit tests:
+
+```
+python3 -m unittest
+```
+
+
+To install this package using pip, add the following line in your `requirements.txt` file:
+
+```
+-e git+https://github.com/rsicart/deadman-state-machine.git@master#egg=deadman_state_machine
+```
+
+Replace master by a tag or commit if needed.
+
