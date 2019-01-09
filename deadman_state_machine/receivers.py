@@ -1,7 +1,9 @@
 import abc
 import logging
 from urllib.parse import urlparse, urlunparse
-from urllib import request, error
+from urllib.error import HTTPError, URLError
+from urllib import request
+from socket import timeout
 import json
 
 
@@ -116,16 +118,19 @@ class HttpPostJsonReceiver(Receiver):
         req = request.Request(self.get_url(), data=payload_bytes)
 
         # append headers
+        req.add_header('Content-Type', 'application/json')
         if self.get_headers():
             for header_name, header_value in self.get_headers().items():
                 req.add_header(header_name, header_value)
 
         # make http call
         try:
-            res = request.urlopen(req)
-            self.logger.debug("Alert sent to HttpPostReceiver")
-        except error.HTTPError as e:
+            self.logger.debug("Alert sent to HttpPostReceiver with data : {}".format(payload_string))
+            res = request.urlopen(req, timeout=self.get_timeout())
+        except (HTTPError, URLError) as e:
             self.logger.error("HTTP Error POSTing alert to receiver: {}".format(e))
+        except timeout as e:
+            self.logger.error("Timeout Error POSTing alert to receiver: {}".format(e))
         except Exception as e:
             self.logger.error("Unknown error POSTing alert to receiver: {}".format(e))
 
@@ -142,19 +147,19 @@ class HttpPostJsonReceiver(Receiver):
         req = request.Request(self.get_url(), data=payload_bytes)
 
         # append headers
-        try:
-            if self.get_headers():
-                for header_name, header_value in self.get_headers().items():
-                    req.add_header(header_name, header_value)
-        except Exception as e:
-            self.logger.error("Error appending resolve headers to receiver: {}".format(e))
+        req.add_header('Content-Type', 'application/json')
+        if self.get_headers():
+            for header_name, header_value in self.get_headers().items():
+                req.add_header(header_name, header_value)
 
         # make http call
         try:
-            res = request.urlopen(req)
-            self.logger.debug("Resolve sent to HttpPostReceiver")
-        except error.HTTPError as e:
+            self.logger.debug("Resolve sent to HttpPostReceiver with data : {}".format(payload_string))
+            res = request.urlopen(req, timeout=self.get_timeout())
+        except (HTTPError, URLError) as e:
             self.logger.error("Error POSTing resolve to receiver: {}".format(e))
+        except timeout as e:
+            self.logger.error("Timeout Error POSTing resolve to receiver: {}".format(e))
         except Exception as e:
             self.logger.error("Unknown error POSTing resolve to receiver: {}".format(e))
 

@@ -182,9 +182,19 @@ def main():
     logging.basicConfig(level=logging.DEBUG, format=FORMAT)
     logger = logging.getLogger(__name__)
     alive_state = AliveState()
+    alert_dict = {
+        'status': 'firing',
+        'alertname':'DeadMansSwitch',
+        'message':'SOS All is explosing',
+    }
+    resolve_dict = {
+        'status': 'resolved',
+        'alertname':'DeadMansSwitch',
+        'message':'PHEW All is resolving',
+    }
     receiver_list = [
-        receivers.HttpPostJsonReceiver('http://localhost:8000/hello'),
-        #receivers.HttpPostJsonReceiver('http://localhost:8000/deadman')
+        #receivers.HttpPostJsonReceiver('http://localhost:8000/hello'),
+        receivers.HttpPostJsonReceiver('http://localhost:8000/deadman', alert_dict=alert_dict, resolve_dict=resolve_dict)
     ]
     context = DeadmanStateMachine(alive_state, 10, receivers=receiver_list)
 
