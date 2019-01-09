@@ -100,6 +100,8 @@ class State(metaclass=abc.ABCMeta):
     Define an interface for encapsulating the behavior associated with a
     particular state of the DeadmanStateMachine.
     """
+    def __repr__(self):
+        return self.__class__.__name__
 
     @abc.abstractmethod
     def handle(self, context):
@@ -117,7 +119,6 @@ class AliveState(State):
     Transitions:
     * next state is AliveState or DeadState
     """
-
     def handle(self, context):
         context.set_last_state(context.get_state())
         # reset notifications
