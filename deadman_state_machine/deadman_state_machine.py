@@ -8,6 +8,7 @@ import logging
 import datetime
 import time
 import random
+import receivers
 
 
 class DeadmanStateMachine:
@@ -17,7 +18,7 @@ class DeadmanStateMachine:
     current state.
     """
 
-    def __init__(self, state, timeout=120, logger=None):
+    def __init__(self, state, timeout=120, logger=None, receivers=[]):
         self.logger = logger or logging.getLogger(__name__)
         self._state = state
         self.timeout = timeout
@@ -25,6 +26,7 @@ class DeadmanStateMachine:
         self.last_ping = datetime.datetime.now()
         self.alert_sent = False
         self.resolve_sent = False
+        self.receivers = receivers
 
     def get_state(self):
         return self._state
@@ -62,16 +64,34 @@ class DeadmanStateMachine:
     def set_resolve_sent(self, resolve_sent):
         self.resolve_sent = resolve_sent
 
+    def get_receivers(self):
+        return self.receivers
+
+    def set_receivers(self, receivers):
+        self.receivers = receivers
+
     def request(self):
         self.logger.debug("State is {}".format(self.get_state()))
         self._state.handle(self)
 
     def send_alert(self):
-        self.logger.debug("Send alert")
+        if not self.get_receivers():
+            self.logger.warn("No receivers configured, alert not sent")
+            self.set_alert_sent(False)
+            return
+        for receiver in self.get_receivers():
+            self.logger.debug("Send alert to receiver {}".format(receiver))
+            receiver.send_alert()
         self.set_alert_sent(True)
 
     def send_resolve(self):
-        self.logger.debug("Send resolve")
+        if not self.get_receivers():
+            self.logger.warn("No receivers configured, resolve not sent")
+            self.set_resolve_sent(False)
+            return
+        for receiver in self.get_receivers():
+            self.logger.debug("Send resolve to receiver {}".format(receiver))
+            receiver.send_resolve()
         self.set_resolve_sent(True)
 
 
@@ -158,17 +178,22 @@ class RessurrectionState(State):
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    FORMAT = '%(asctime)-15s %(message)s'
+    logging.basicConfig(level=logging.DEBUG, format=FORMAT)
     logger = logging.getLogger(__name__)
     alive_state = AliveState()
-    context = DeadmanStateMachine(alive_state, 10)
+    receiver_list = [
+        receivers.HttpPostJsonReceiver('http://localhost:8000/hello'),
+        #receivers.HttpPostJsonReceiver('http://localhost:8000/deadman')
+    ]
+    context = DeadmanStateMachine(alive_state, 10, receivers=receiver_list)
 
     while (datetime.datetime.now() - context.get_last_ping()) < datetime.timedelta(seconds=30):
         context.request()
 
         # randomize last ping
         random_number = random.randint(1,10)
-        if random_number < 3:
+        if random_number < 2:
 
             logger.debug("Ping")
 
