@@ -8,7 +8,7 @@ import logging
 import datetime
 import time
 import random
-import receivers
+from . import receivers
 
 
 class DeadmanStateMachine:
