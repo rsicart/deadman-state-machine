@@ -48,3 +48,8 @@ To install this package using pip, add the following line in your `requirements.
 
 Replace master by a tag or commit if needed.
 
+
+To launch a simulation just run `deadman_state_machine/deadman_state_machine.py`:
+```
+python3 deadman_state_machine/deadman_state_machine.py
+```
