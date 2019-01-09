@@ -24,7 +24,7 @@ def main():
         #receivers.HttpPostJsonReceiver('http://localhost:8000/hello'),
         receivers.HttpPostJsonReceiver('http://localhost:8000/deadman', alert_dict=alert_dict, resolve_dict=resolve_dict)
     ]
-    context = deadman_state_machine.DeadmanStateMachine(alive_state, 10, receivers=receiver_list)
+    context = deadman_state_machine.DeadmanStateMachine(alive_state, timeout=10, receivers=receiver_list)
 
     while (datetime.datetime.now() - context.get_last_ping()) < datetime.timedelta(seconds=30):
         context.request()
