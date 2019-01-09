@@ -80,7 +80,7 @@ class HttpPostJsonReceiver(Receiver):
 
     def set_alert_dict(self, alert_dict):
         """
-        Sets headers to be added when sending an alert/resolve
+        Sets payload to be added when sending an alert/resolve
         param alert_dict dict
         """
         if not alert_dict:
@@ -92,7 +92,7 @@ class HttpPostJsonReceiver(Receiver):
 
     def set_resolve_dict(self, resolve_dict):
         """
-        Sets headers to be added when sending an alert/resolve
+        Sets payload to be added when sending an alert/resolve
         param resolve_dict dict
         """
         if not resolve_dict:
@@ -103,7 +103,33 @@ class HttpPostJsonReceiver(Receiver):
         return self.timeout
 
     def set_timeout(self, timeout):
+        """
+        Sets timeout seconds for http client
+        param timeout int seconds
+        """
         self.timeout = timeout
+
+    def do_post(self, req):
+        """
+        Makes post request to receiver.
+        param req urllib.request.Request
+        """
+        # append headers
+        req.add_header('Content-Type', 'application/json')
+        if self.get_headers():
+            for header_name, header_value in self.get_headers().items():
+                req.add_header(header_name, header_value)
+
+        # make http call
+        try:
+            self.logger.debug("POST request sent to HttpPostReceiver with data : {}".format(req.data.decode('utf-8')))
+            res = request.urlopen(req, timeout=self.get_timeout())
+        except (HTTPError, URLError) as e:
+            self.logger.error("HTTP error: {}".format(e))
+        except timeout as e:
+            self.logger.error("Timeout Error: {}".format(e))
+        except Exception as e:
+            self.logger.error("Unknown error: {}".format(e))
 
     def send_alert(self):
         """
@@ -113,26 +139,11 @@ class HttpPostJsonReceiver(Receiver):
             payload_string = json.dumps(self.get_alert_dict())
             payload_bytes = payload_string.encode('utf-8')
         except ValueError as e:
-            self.logger.error("Error parsing json payload in receiver")
+            self.logger.error("Error parsing json payload")
 
         req = request.Request(self.get_url(), data=payload_bytes)
+        self.do_post(req)
 
-        # append headers
-        req.add_header('Content-Type', 'application/json')
-        if self.get_headers():
-            for header_name, header_value in self.get_headers().items():
-                req.add_header(header_name, header_value)
-
-        # make http call
-        try:
-            self.logger.debug("Alert sent to HttpPostReceiver with data : {}".format(payload_string))
-            res = request.urlopen(req, timeout=self.get_timeout())
-        except (HTTPError, URLError) as e:
-            self.logger.error("HTTP Error POSTing alert to receiver: {}".format(e))
-        except timeout as e:
-            self.logger.error("Timeout Error POSTing alert to receiver: {}".format(e))
-        except Exception as e:
-            self.logger.error("Unknown error POSTing alert to receiver: {}".format(e))
 
     def send_resolve(self):
         """
@@ -142,24 +153,7 @@ class HttpPostJsonReceiver(Receiver):
             payload_string = json.dumps(self.get_resolve_dict())
             payload_bytes = payload_string.encode('utf-8')
         except ValueError as e:
-            self.logger.error("Error parsing json payload in receiver")
+            self.logger.error("Error parsing json payload")
 
         req = request.Request(self.get_url(), data=payload_bytes)
-
-        # append headers
-        req.add_header('Content-Type', 'application/json')
-        if self.get_headers():
-            for header_name, header_value in self.get_headers().items():
-                req.add_header(header_name, header_value)
-
-        # make http call
-        try:
-            self.logger.debug("Resolve sent to HttpPostReceiver with data : {}".format(payload_string))
-            res = request.urlopen(req, timeout=self.get_timeout())
-        except (HTTPError, URLError) as e:
-            self.logger.error("Error POSTing resolve to receiver: {}".format(e))
-        except timeout as e:
-            self.logger.error("Timeout Error POSTing resolve to receiver: {}".format(e))
-        except Exception as e:
-            self.logger.error("Unknown error POSTing resolve to receiver: {}".format(e))
-
+        self.do_post(req)
